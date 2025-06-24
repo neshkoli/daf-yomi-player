@@ -1,0 +1,38 @@
+{
+  "name": "daf-yomi-player",
+  "version": "1.0.0",
+  "description": "A static web audio player for Daf Yomi recordings",
+  "main": "index.html",
+  "scripts": {
+    "build": "node build.js",
+    "serve": "npx http-server -p 8080 -c-1",
+    "dev": "npm run build && npm run serve",
+    "validate": "node build.js && echo 'Data validation complete'",
+    "validate-content": "node validate-content.js",
+    "clean": "rm -f data.json && echo 'Cleaned generated files'",
+    "rebuild": "npm run clean && npm run build",
+    "start": "npm run dev",
+    "predev": "npm run build",
+    "lint": "echo 'Linting not configured yet'",
+    "test": "echo 'Tests not configured yet'"
+  },
+  "keywords": [
+    "daf-yomi",
+    "audio-player",
+    "static-site",
+    "github-pages"
+  ],
+  "author": "Daf Yomi Audio Player",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/neshkoli/daf-yomi-player.git"
+  },
+  "homepage": "https://neshkoli.github.io/daf-yomi-player"
+}
