@@ -28,7 +28,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
+        with:
+          lfs: false  # Don't download LFS files during build
+          
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -40,13 +42,15 @@ jobs:
       - name: Build data.json
         run: npm run build
         
+      - name: Checkout LFS files for deployment
+        run: git lfs pull
+        
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
           path: '.'
 
   # Deployment job
