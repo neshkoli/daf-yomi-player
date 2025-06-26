@@ -69,7 +69,12 @@ class DafYomiPlayer {
         // Filter to only show tractates that have available audio content
         const availableTractates = this.masechetData.filter(masechet => {
             // Check if this tractate exists in audioData and has content
-            return this.audioData[masechet.title] && this.audioData[masechet.title].length > 0;
+            const tractateData = this.audioData[masechet.title];
+            if (!tractateData) return false;
+            
+            // Handle both old format (array) and new format (object with dafs array)
+            const dafs = Array.isArray(tractateData) ? tractateData : tractateData.dafs || [];
+            return dafs.length > 0;
         });
         
         availableTractates.forEach(masechet => {
@@ -132,7 +137,11 @@ class DafYomiPlayer {
     }
 
     populateDafDropdown(tractate) {
-        const dafs = this.audioData[tractate] || [];
+        const tractateData = this.audioData[tractate];
+        if (!tractateData) return;
+        
+        // Handle both old format (array) and new format (object with dafs array)
+        const dafs = Array.isArray(tractateData) ? tractateData : tractateData.dafs || [];
         
         // Clear and enable daf dropdown
         this.dafSelect.innerHTML = '<option value="">Daf...</option>';
@@ -345,7 +354,17 @@ class DafYomiPlayer {
     loadAudio() {
         if (!this.currentTractate || !this.currentDaf) return;
         
-        const audioPath = `content/${this.currentTractate}/${this.currentTractate}${this.currentDaf}.mp3`;
+        // Get audio URL - check if we have GCS URLs or use local path
+        let audioPath;
+        const tractateData = this.audioData[this.currentTractate];
+        
+        if (tractateData && tractateData.urls && tractateData.urls[this.currentDaf]) {
+            // Use GCS URL
+            audioPath = tractateData.urls[this.currentDaf];
+        } else {
+            // Fallback to local path
+            audioPath = `content/${this.currentTractate}/${this.currentTractate}${this.currentDaf}.mp3`;
+        }
         
         // Show now-playing section and loading state (only if elements exist)
         if (this.nowPlaying) this.nowPlaying.classList.remove('hidden');
@@ -389,7 +408,8 @@ class DafYomiPlayer {
     playNextDaf() {
         if (!this.currentTractate || !this.currentDaf) return;
         
-        const dafs = this.audioData[this.currentTractate];
+        const tractateData = this.audioData[this.currentTractate];
+        const dafs = Array.isArray(tractateData) ? tractateData : tractateData.dafs || [];
         const currentIndex = dafs.indexOf(this.currentDaf);
         
         if (currentIndex < dafs.length - 1) {
@@ -673,7 +693,61 @@ class DafYomiPlayer {
             console.log(`No ${languageName} text could be extracted from:`, data);
         } else {
             console.log('Successfully displayed', this.textContent.children.length, 'text segments in', this.currentLanguage);
+            
+            // Add attribution with Sefaria logo and version notes
+            this.addTextAttribution(data);
         }
+    }
+    
+    addTextAttribution(data) {
+        if (!data || !this.textContent) return;
+        
+        // Remove any existing attribution
+        const existingAttribution = this.textContent.querySelector('.text-attribution');
+        if (existingAttribution) {
+            existingAttribution.remove();
+        }
+        
+        // Find the appropriate version for attribution
+        let versionNotes = '';
+        if (data.versions && data.versions.length > 0) {
+            let targetVersion;
+            if (this.currentLanguage === 'he') {
+                targetVersion = data.versions.find(v => v.language === 'he' && v.isPrimary);
+            } else {
+                targetVersion = data.versions.find(v => v.language === 'en');
+            }
+            
+            if (targetVersion && targetVersion.versionNotes) {
+                versionNotes = targetVersion.versionNotes;
+            }
+        }
+        
+        // Fallback to default text if no version notes found
+        if (!versionNotes) {
+            versionNotes = this.currentLanguage === 'he' 
+                ? 'Hebrew text from Sefaria.org'
+                : 'English from The William Davidson digital edition of the <a href="https://korenpub.com/collections/the-noe-edition-koren-talmud-bavli-1">Koren Noé Talmud</a>, with commentary by <a href="/adin-even-israel-steinsaltz">Rabbi Adin Even-Israel Steinsaltz</a>';
+        }
+        
+        // Create attribution element
+        const attributionDiv = document.createElement('div');
+        attributionDiv.className = 'text-attribution';
+        
+        // Add Sefaria logo
+        const logo = document.createElement('img');
+        logo.src = 'sefaria.png';
+        logo.alt = 'Sefaria';
+        
+        // Add version notes text
+        const textSpan = document.createElement('span');
+        textSpan.innerHTML = versionNotes;
+        
+        attributionDiv.appendChild(logo);
+        attributionDiv.appendChild(textSpan);
+        
+        // Append to text content
+        this.textContent.appendChild(attributionDiv);
     }
     
     // Test function to debug Sefaria API

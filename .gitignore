@@ -49,6 +49,18 @@ jspm_packages/
 # dotenv environment variables file
 .env
 
+# Google Cloud credentials
+*.json
+!package*.json
+!data.json
+!masechet.json
+!gcp-upload/cors.json
+
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
 # VS Code
 .vscode/
 
@@ -99,3 +111,7 @@ content-report.html
 *.map
 *.min.js
 *.min.css
+
+content/
+gen-lang-client-0358144632-ed46078f47e0.json
+gcp-upload/

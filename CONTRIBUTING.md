@@ -27,7 +27,8 @@ This is a static web application for playing Daf Yomi audio recordings, built wi
 ├── masechet.json       # Tractate configuration
 ├── build.js            # Build script for data generation
 ├── content/            # Audio files organized by tractate
-└── utils/              # Utility scripts
+├── utils/              # General utility scripts
+└── gcp-upload/         # GCP upload and migration scripts
 ```
 
 ## Contributing Guidelines

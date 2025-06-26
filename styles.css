@@ -4,7 +4,7 @@
     --primary-color: #2563eb;
     --primary-dark: #1d4ed8;
     --secondary-color: #64748b;
-    --background: #f8fafc;
+    --background: #8b4513;
     --surface: #ffffff;
     --surface-hover: #f1f5f9;
     --border: #e2e8f0;
@@ -508,6 +508,40 @@ body {
 
 .text-content::-webkit-scrollbar-thumb:hover {
     background: var(--primary-color);
+}
+
+/* Text attribution styles */
+.text-attribution {
+    display: flex !important;
+    align-items: flex-start !important;
+    margin-top: 15px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid #e0e0e0 !important;
+    font-size: 0.9em !important;
+    color: #666 !important;
+    text-align: left !important;
+}
+
+.text-attribution img {
+    height: 5em !important;
+    margin-right: 8px !important;
+    margin-top: 2px !important;
+    flex-shrink: 0 !important;
+}
+
+.text-attribution span {
+    text-align: left !important;
+    direction: ltr !important;
+    flex: 1;
+}
+
+.text-attribution a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.text-attribution a:hover {
+    text-decoration: underline;
 }
 
 /* Responsive Design */
