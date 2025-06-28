@@ -26,15 +26,6 @@
             property="og:url"
             content="https://neshkoli.github.io/daf-yomi-player" />
 
-        <!-- Twitter -->
-        <meta property="twitter:card" content="summary" />
-        <meta
-            property="twitter:title"
-            content="Daf Yomi by R. Darren Platzky" />
-        <meta
-            property="twitter:description"
-            content="Daf Yomi audio recordings by R. Darren Platzky from Mevaser Zion, Tel Mond" />
-
         <!-- Favicon -->
         <link
             rel="icon"
@@ -47,43 +38,48 @@
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     </head>
     <body>
-        <div class="container">
-            <header class="header">
-                <div class="header-image">
-                    <img
-                        src="header.png"
-                        alt="Daf Yomi Header"
-                        class="header-bg" />
-                    <div class="header-overlay">
-                        <h1 class="header-title">
-                            Daf Yomi by R. Darren Platzky
-                        </h1>
-                        <p class="header-subtitle">Mevaser Zion - Tel Mond</p>
+        <!-- Sticky Header -->
+        <header class="sticky-header">
+            <div class="sticky-header-content">
+                <div class="header-logo">
+                    <img src="mz_logo.png" alt="Logo" class="logo-img" />
+                </div>
+                <div class="header-text">
+                    <h1 class="header-title">
+                        Daf Yomi by R. Darren Platzky
+                    </h1>
+                    <p class="header-subtitle">Mevaser Zion - Tel Mond</p>
+                </div>
+                <div class="header-dropdowns">
+                    <div class="dropdown-container">
+                        <div class="dropdown-group">
+                            <select
+                                id="tractate-select"
+                                class="dropdown header-dropdown">
+                                <option value="">מסכת</option>
+                            </select>
+                        </div>
+                        <div class="dropdown-group">
+                            <select
+                                id="daf-select"
+                                class="dropdown header-dropdown"
+                                disabled>
+                                <option value="">דף</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
+            <div> Hello World</div>            </div>
 
-                <!-- Audio player adjacent to header -->
+        </header>
+
+        <div class="container">
+            <main class="main-content">
+                <!-- Audio player section -->
                 <div class="header-audio-section">
                     <div class="header-card">
                         <div class="controls-section">
                             <div class="controls-row">
-                                <div class="dropdown-container">
-                                    <div class="dropdown-group">
-                                        <select
-                                            id="tractate-select"
-                                            class="dropdown">
-                                            <option value="">Masechet</option>
-                                        </select>
-                                    </div>
-                                    <div class="dropdown-group">
-                                        <select
-                                            id="daf-select"
-                                            class="dropdown"
-                                            disabled>
-                                            <option value="">Daf</option>
-                                        </select>
-                                    </div>
-                                </div>
                                 <div class="player-controls">
                                     <button
                                         id="prev-btn"
@@ -155,10 +151,6 @@
                         </div>
                     </div>
                 </div>
-            </header>
-
-            <main class="main">
-                <!-- Controls moved to header -->
             </main>
 
             <footer class="footer">

@@ -144,7 +144,7 @@ class DafYomiPlayer {
         const dafs = Array.isArray(tractateData) ? tractateData : tractateData.dafs || [];
         
         // Clear and enable daf dropdown
-        this.dafSelect.innerHTML = '<option value="">Daf...</option>';
+        this.dafSelect.innerHTML = '<option value="">דף</option>';
         this.dafSelect.disabled = false;
         
         // Sort numerically
@@ -200,7 +200,7 @@ class DafYomiPlayer {
                     this.currentDafText.textContent = `Masechet ${tractate} - ${hebrewTitle} selected - Choose a Daf`;
                 }
             } else {
-                this.dafSelect.innerHTML = '<option value="">Select Daf...</option>';
+                this.dafSelect.innerHTML = '<option value="">דף</option>';
                 this.dafSelect.disabled = true;
                 // Stop playback and reset to initial state
                 if (this.isPlaying) {
@@ -354,28 +354,73 @@ class DafYomiPlayer {
     loadAudio() {
         if (!this.currentTractate || !this.currentDaf) return;
         
-        // Get audio URL - check if we have GCS URLs or use local path
-        let audioPath;
-        const tractateData = this.audioData[this.currentTractate];
-        
-        if (tractateData && tractateData.urls && tractateData.urls[this.currentDaf]) {
-            // Use GCS URL
-            audioPath = tractateData.urls[this.currentDaf];
-        } else {
-            // Fallback to local path
-            audioPath = `content/${this.currentTractate}/${this.currentTractate}${this.currentDaf}.mp3`;
-        }
+        // First try local path
+        const localAudioPath = `content/${this.currentTractate}/${this.currentTractate}${this.currentDaf}.mp3`;
         
         // Show now-playing section and loading state (only if elements exist)
         if (this.nowPlaying) this.nowPlaying.classList.remove('hidden');
-        if (this.currentTrack) this.currentTrack.textContent = `Loading ${this.formatTractateName(this.currentTractate)} - Daf ${this.currentDaf}...`;
+        if (this.currentTrack) this.currentTrack.textContent = `Loading ${this.formatTractateName(this.currentTractate)} - Daf ${this.currentDaf}`;
         if (this.currentInfo) this.currentInfo.textContent = 'Preparing audio...';
         
         // Disable controls while loading
         this.disablePlayControls(true);
         
-        this.audio.src = audioPath;
-        this.audio.load();
+        // Try local path first
+        this.tryLoadAudio(localAudioPath, () => {
+            // If local fails, try GCP storage
+            const gcsAudioPath = `https://storage.googleapis.com/dafyomi-audio/content/${this.currentTractate}/${this.currentTractate}${this.currentDaf}.mp3`;
+            this.tryLoadAudio(gcsAudioPath, () => {
+                // If both fail, show error
+                this.handleAudioLoadError();
+            });
+        });
+    }
+    
+    tryLoadAudio(audioPath, onError) {
+        // Create a temporary audio element to test if the file exists
+        const testAudio = new Audio();
+        
+        testAudio.addEventListener('canplay', () => {
+            // File exists and can be played, use it in the main player
+            this.audio.src = audioPath;
+            this.audio.load();
+        }, { once: true });
+        
+        testAudio.addEventListener('error', () => {
+            // File doesn't exist or can't be loaded, try fallback
+            onError();
+        }, { once: true });
+        
+        // Start loading the test audio
+        testAudio.src = audioPath;
+        testAudio.load();
+    }
+    
+    handleAudioLoadError() {
+        // Check if we have GCS URLs in data.json as final fallback
+        const tractateData = this.audioData[this.currentTractate];
+        let fallbackPath = null;
+        
+        if (tractateData && tractateData.urls && tractateData.urls[this.currentDaf]) {
+            fallbackPath = tractateData.urls[this.currentDaf];
+        }
+        
+        if (fallbackPath) {
+            // Try the URL from data.json
+            this.audio.src = fallbackPath;
+            this.audio.load();
+        } else {
+            // No audio file found anywhere
+            this.isLoading = false;
+            this.showLoading(false);
+            this.disablePlayControls(true);
+            
+            if (this.nowPlaying) this.nowPlaying.classList.remove('hidden');
+            if (this.currentTrack) this.currentTrack.textContent = 'Audio not available';
+            if (this.currentInfo) this.currentInfo.textContent = `No audio file found for ${this.formatTractateName(this.currentTractate)} - Daf ${this.currentDaf}`;
+            
+            console.error(`Audio file not found for ${this.currentTractate} ${this.currentDaf}`);
+        }
     }
     
     togglePlayPause() {
