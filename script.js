@@ -1,44 +1,30 @@
 class DafYomiPlayer {
     constructor() {
         this.audioData = {};
-        this.masechetData = []; // Store masechet data
+        this.masechetData = [];
         this.currentTractate = '';
         this.currentDaf = '';
-        this.currentLanguage = 'en'; // Default to English
-        this.currentTextData = null; // Store the current text data
+        this.currentLanguage = 'en';
         this.audio = document.getElementById('audio-player');
         this.isPlaying = false;
         this.isLoading = false;
         
         this.initializeElements();
-        this.loadData(); // Changed from loadAudioData to loadData
+        this.loadData();
         this.bindEvents();
-        
-        // Initially disable play controls and show initial state
         this.setInitialState();
     }
     
     initializeElements() {
         this.tractateSelect = document.getElementById('tractate-select');
         this.dafSelect = document.getElementById('daf-select');
-        this.loadBtn = document.getElementById('load-btn'); // May not exist
-        this.audioSection = document.getElementById('audio-section');
-        this.currentTrack = document.getElementById('current-track'); // May not exist
-        this.currentInfo = document.getElementById('current-info'); // May not exist
-        this.currentDafText = document.getElementById('current-daf-text'); // New element for header text
         this.playPauseBtn = document.getElementById('play-pause-btn');
         this.prevBtn = document.getElementById('prev-btn');
         this.nextBtn = document.getElementById('next-btn');
-        this.currentTime = document.getElementById('current-time'); // May not exist
-        this.duration = document.getElementById('duration'); // May not exist
-        this.progress = document.getElementById('progress'); // May not exist
-        this.progressBar = document.querySelector('.progress-bar'); // May not exist
         this.loading = document.getElementById('loading');
-        this.nowPlaying = document.querySelector('.now-playing'); // May not exist
         
         // Text section elements
         this.textSection = document.getElementById('text-section');
-        this.textTitle = document.getElementById('text-title');
         this.textLoading = document.getElementById('text-loading');
         this.textContent = document.getElementById('text-content');
         this.hebrewBtn = document.getElementById('hebrew-btn');
@@ -195,11 +181,6 @@ class DafYomiPlayer {
             if (tractate) {
                 this.populateDafDropdown(tractate);
                 this.currentTractate = tractate;
-                // Update header text to show tractate selection with Hebrew
-                if (this.currentDafText) {
-                    const hebrewTitle = this.getHebrewTitle(tractate);
-                    this.currentDafText.textContent = `Masechet ${tractate} - ${hebrewTitle} selected - Choose a Daf`;
-                }
             } else {
                 this.dafSelect.innerHTML = '<option value="">דף</option>';
                 this.dafSelect.disabled = true;
@@ -223,24 +204,17 @@ class DafYomiPlayer {
                     this.isPlaying = false;
                     this.updatePlayPauseButton();
                 }
-                // Update header text immediately when daf is selected
-                this.updateCurrentDafText();
                 // Automatically load audio when daf is selected
                 this.loadAudio();
                 // Load Talmud text when daf is selected
                 this.loadTalmudText();
+                // Update page title
+                this.updatePageTitle();
             } else {
                 // Reset to initial state when no daf selected
                 this.resetToInitialState();
             }
         });
-        
-        // Load button (optional - only bind if it exists)
-        if (this.loadBtn) {
-            this.loadBtn.addEventListener('click', () => {
-                this.loadAudio();
-            });
-        }
         
         // Audio player controls
         this.playPauseBtn.addEventListener('click', () => {
@@ -266,10 +240,6 @@ class DafYomiPlayer {
             this.isLoading = false;
             this.showLoading(false);
             this.disablePlayControls(false);
-            // Update UI when audio is ready (only if elements exist)
-            if (this.nowPlaying) this.nowPlaying.classList.remove('hidden');
-            if (this.currentTrack) this.currentTrack.textContent = `${this.formatTractateName(this.currentTractate)} - Daf ${this.currentDaf}`;
-            if (this.currentInfo) this.currentInfo.textContent = `Ready to play from ${this.formatTractateName(this.currentTractate)}`;
         });
         
         this.audio.addEventListener('error', () => {
@@ -279,9 +249,6 @@ class DafYomiPlayer {
             
             // Only show error if we actually tried to load something
             if (this.currentTractate && this.currentDaf) {
-                if (this.nowPlaying) this.nowPlaying.classList.remove('hidden');
-                if (this.currentTrack) this.currentTrack.textContent = 'Error loading audio';
-                if (this.currentInfo) this.currentInfo.textContent = 'Please try selecting another daf';
                 this.showError('Error loading audio file. Please try another daf.');
             }
         });
@@ -296,29 +263,9 @@ class DafYomiPlayer {
             this.updatePlayPauseButton();
         });
         
-        this.audio.addEventListener('timeupdate', () => {
-            this.updateProgress();
-        });
-        
-        this.audio.addEventListener('loadedmetadata', () => {
-            this.updateDuration();
-        });
-        
         this.audio.addEventListener('ended', () => {
             this.playNextDaf();
         });
-        
-        // Progress bar click (only if progress bar exists)
-        if (this.progressBar) {
-            this.progressBar.addEventListener('click', (e) => {
-                if (this.audio.duration) {
-                    const rect = this.progressBar.getBoundingClientRect();
-                    const clickX = e.clientX - rect.left;
-                    const percentage = clickX / rect.width;
-                    this.audio.currentTime = percentage * this.audio.duration;
-                }
-            });
-        }
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -357,11 +304,6 @@ class DafYomiPlayer {
         
         // First try local path
         const localAudioPath = `content/${this.currentTractate}/${this.currentTractate}${this.currentDaf}.mp3`;
-        
-        // Show now-playing section and loading state (only if elements exist)
-        if (this.nowPlaying) this.nowPlaying.classList.remove('hidden');
-        if (this.currentTrack) this.currentTrack.textContent = `Loading ${this.formatTractateName(this.currentTractate)} - Daf ${this.currentDaf}`;
-        if (this.currentInfo) this.currentInfo.textContent = 'Preparing audio...';
         
         // Disable controls while loading
         this.disablePlayControls(true);
@@ -416,10 +358,6 @@ class DafYomiPlayer {
             this.showLoading(false);
             this.disablePlayControls(true);
             
-            if (this.nowPlaying) this.nowPlaying.classList.remove('hidden');
-            if (this.currentTrack) this.currentTrack.textContent = 'Audio not available';
-            if (this.currentInfo) this.currentInfo.textContent = `No audio file found for ${this.formatTractateName(this.currentTractate)} - Daf ${this.currentDaf}`;
-            
             console.error(`Audio file not found for ${this.currentTractate} ${this.currentDaf}`);
         }
     }
@@ -471,44 +409,11 @@ class DafYomiPlayer {
         icon.className = this.isPlaying ? 'fas fa-pause' : 'fas fa-play';
     }
     
-    updateProgress() {
-        if (this.audio.duration) {
-            const percentage = (this.audio.currentTime / this.audio.duration) * 100;
-            if (this.progress) this.progress.style.width = `${percentage}%`;
-            
-            if (this.currentTime) this.currentTime.textContent = this.formatTime(this.audio.currentTime);
-        }
-    }
-    
-    updateDuration() {
-        if (this.duration) this.duration.textContent = this.formatTime(this.audio.duration);
-    }
-    
-    formatTime(seconds) {
-        if (isNaN(seconds)) return '0:00';
-        
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = Math.floor(seconds % 60);
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-    
     setInitialState() {
-        // Always show the audio section
-        if (this.audioSection) this.audioSection.style.display = 'block';
-        
         // Set initial disabled state
         this.disablePlayControls(true);
         
-        // Clear text and hide now-playing section when no audio is selected (only if elements exist)
-        if (this.currentTrack) this.currentTrack.textContent = '';
-        if (this.currentInfo) this.currentInfo.textContent = '';
-        if (this.nowPlaying) this.nowPlaying.classList.add('hidden');
-        
-        // Reset header text to initial state
-        if (this.currentDafText) this.currentDafText.textContent = 'Select a Masechet and Daf to begin learning';
-        
         // Reset text section
-        if (this.textTitle) this.textTitle.textContent = 'Talmud Text';
         if (this.textContent) this.textContent.innerHTML = '<p class="text-placeholder">Select a Masechet and Daf to view the text</p>';
         if (this.textLoading) this.textLoading.style.display = 'none';
         
@@ -519,11 +424,6 @@ class DafYomiPlayer {
         this.audio.src = '';
         this.isPlaying = false;
         this.updatePlayPauseButton();
-        
-        // Reset progress (only if elements exist)
-        if (this.progress) this.progress.style.width = '0%';
-        if (this.currentTime) this.currentTime.textContent = '0:00';
-        if (this.duration) this.duration.textContent = '0:00';
     }
     
     resetToInitialState() {
@@ -570,15 +470,6 @@ class DafYomiPlayer {
     showError(message) {
         // Simple error handling - could be enhanced with a toast system
         alert(message);
-    }
-    
-    updateCurrentDafText() {
-        if (this.currentDafText && this.currentTractate && this.currentDaf) {
-            const hebrewTitle = this.getHebrewTitle(this.currentTractate);
-            this.currentDafText.textContent = `Now learning: ${this.currentTractate} - ${hebrewTitle} - Daf ${this.currentDaf}`;
-        }
-        // Update page title whenever daf text is updated
-        this.updatePageTitle();
     }
     
     updatePageTitle() {
@@ -636,15 +527,12 @@ class DafYomiPlayer {
         
         // Show loading state
         if (this.textLoading) this.textLoading.style.display = 'flex';
-        if (this.textTitle) this.textTitle.textContent = 'Loading Talmud Text...';
         if (this.textContent) this.textContent.innerHTML = '<p class="text-placeholder">Loading text from Sefaria...</p>';
         
         try {
             const data = await this.getTalmudPage(this.currentTractate, this.currentDaf, this.currentLanguage);
             console.log('Received data for current selection:', data);
             
-            // Store the data for language switching
-            this.currentTextData = data;
             this.displayTalmudText(data);
         } catch (error) {
             console.error('Error loading Talmud text:', error);
@@ -662,12 +550,6 @@ class DafYomiPlayer {
         
         console.log('Displaying text data for language:', this.currentLanguage);
         console.log('Full data structure:', data);
-        
-        // Update title
-        if (this.textTitle) {
-            const tractateFormatted = this.formatTractateName(this.currentTractate);
-            this.textTitle.textContent = `${tractateFormatted} ${this.currentDaf}`;
-        }
         
         // Clear content
         this.textContent.innerHTML = '';
@@ -794,64 +676,6 @@ class DafYomiPlayer {
         
         // Append to text content
         this.textContent.appendChild(attributionDiv);
-    }
-    
-    // Test function to debug Sefaria API
-    async testSefariaAPI() {
-        console.log('Testing Sefaria API...');
-        
-        // Test with a known tractate and page
-        try {
-            console.log('Fetching Berakhot 2a...');
-            const testData = await this.getTalmudPage('Berakhot', '2a');
-            console.log('Sefaria API Response:', testData);
-            
-            if (testData) {
-                console.log('Response structure:');
-                console.log('- Has versions:', !!testData.versions);
-                console.log('- Versions count:', testData.versions ? testData.versions.length : 0);
-                console.log('- Has direct text:', !!testData.text);
-                
-                if (testData.versions && testData.versions.length > 0) {
-                    testData.versions.forEach((version, index) => {
-                        console.log(`Version ${index}:`, {
-                            language: version.language,
-                            title: version.versionTitle,
-                            isPrimary: version.isPrimary,
-                            hasText: !!version.text
-                        });
-                    });
-                    
-                    // Show Hebrew version text structure
-                    const hebrewVersion = testData.versions.find(v => v.language === 'he' && v.isPrimary);
-                    if (hebrewVersion && hebrewVersion.text) {
-                        console.log('Hebrew text structure:');
-                        console.log('- Is array:', Array.isArray(hebrewVersion.text));
-                        console.log('- Length:', hebrewVersion.text.length);
-                        console.log('- First element type:', typeof hebrewVersion.text[0]);
-                        console.log('- First element is array:', Array.isArray(hebrewVersion.text[0]));
-                        if (hebrewVersion.text[0]) {
-                            console.log('- First few characters:', hebrewVersion.text[0].toString().substring(0, 100));
-                        }
-                    }
-                }
-            } else {
-                console.log('No response data received');
-            }
-        } catch (error) {
-            console.error('Sefaria API test failed:', error);
-        }
-        
-        // Test the mapping between our tractate names and Sefaria names
-        console.log('Current tractate:', this.currentTractate);
-        console.log('Current daf:', this.currentDaf);
-        
-        // Test URL construction
-        if (this.currentTractate && this.currentDaf) {
-            const ref = `${this.currentTractate}.${this.currentDaf}`;
-            const url = `https://www.sefaria.org/api/v3/texts/${ref}`;
-            console.log('Constructed URL:', url);
-        }
     }
     
     switchLanguage(language) {
