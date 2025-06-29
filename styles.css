@@ -348,7 +348,7 @@ body::before {
     font-size: 1rem;
     margin: 0;
     color: var(--text-secondary);
-    font-style: italic;
+    font-style: normal;
     text-align: center;
 }
 
@@ -364,6 +364,41 @@ body::before {
 
 .text-content[dir="ltr"] {
     text-align: left;
+}
+
+/* Text Attribution */
+.text-attribution {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-light);
+    font-size: 0.875rem;
+    color: #666;
+    gap: 0.75rem;
+    direction: ltr;
+    text-align: left;
+}
+
+.text-attribution img {
+    height: 4em;
+    width: auto;
+    flex-shrink: 0;
+    border-radius: 4px;
+}
+
+.text-attribution span {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.text-attribution a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.text-attribution a:hover {
+    text-decoration: underline;
 }
 
 /* Loading Overlay */
@@ -405,7 +440,7 @@ body::before {
     margin-top: 3rem;
     padding-top: 2rem;
     border-top: 1px solid var(--border);
-    color: var(--text-secondary);
+    color: #ff6b35;
     font-size: 0.875rem;
 }
 

@@ -1,9 +1,10 @@
 class DafYomiPlayer {
     constructor() {
         this.audioData = {};
-        this.masechetData = []; // Store masechet data frhis.currentTractate = '';
+        this.masechetData = []; // Store masechet data
+        this.currentTractate = '';
         this.currentDaf = '';
-        this.currentLanguage = 'he'; // Default to Hebrew
+        this.currentLanguage = 'en'; // Default to English
         this.currentTextData = null; // Store the current text data
         this.audio = document.getElementById('audio-player');
         this.isPlaying = false;
