@@ -8,7 +8,7 @@
     --background: #faf8f5;
     --surface: #ffffff;
     --surface-hover: #f5f2ed;
-    --surface-dark: rgba(30, 25, 20, 0.95);
+    --surface-dark: rgba(0, 0, 0, 0.8);
     --border: #e6ddd4;
     --border-light: #f0e8df;
     --text-primary: #2c2419;
@@ -437,10 +437,10 @@ body::before {
 /* Footer */
 .footer {
     text-align: center;
-    margin-top: 3rem;
-    padding-top: 2rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--border);
-    color: #ff6b35;
+    color: #7e2302;
     font-size: 0.875rem;
 }
 
@@ -501,18 +501,27 @@ body::before {
     .logo-img {
         height: 40px;
     }
-    
-    .container {
+     .container {
         padding: 1rem;
     }
-    
+
+    .main-content {
+        padding-top: 0; /* Remove gap between header and main content */
+    }
+
     .header-card {
         padding: 1.5rem;
+        margin: 0 -1rem; /* Extend to container edges */
+        border-radius: 0; /* Remove border radius for full width */
     }
-    
+
     .text-content {
         padding: 1rem;
         font-size: 0.9rem;
+        margin: 0 -1.5rem; /* Extend beyond header-card padding */
+        border-radius: 0; /* Remove border radius for full width */
+        border-left: none;
+        border-right: none;
     }
     
     .controls-row {
