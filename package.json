@@ -14,7 +14,8 @@
     "start": "npm run dev",
     "predev": "npm run build",
     "lint": "echo 'Linting not configured yet'",
-    "test": "echo 'Tests not configured yet'"
+    "test": "echo 'Tests not configured yet'",
+    "mcp": "playwright-mcp"
   },
   "keywords": [
     "daf-yomi",
@@ -25,7 +26,10 @@
   "author": "Daf Yomi Audio Player",
   "license": "MIT",
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "@playwright/mcp": "^0.0.29",
+    "@playwright/test": "^1.53.1",
+    "http-server": "^14.1.1",
+    "playwright": "^1.53.1"
   },
   "engines": {
     "node": ">=14.0.0"

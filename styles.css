@@ -18,21 +18,16 @@
     --shadow-dark: 0 4px 8px 0 rgba(0, 0, 0, 0.3);
     --radius: 0.5rem;
     --radius-lg: 1rem;
-    --header-height: 80px;
+    --header-height: 130px;
 }
 
-/* Reset and Base Styles */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+
 
 body {
     font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--background);
     color: var(--text-primary);
-    line-height: 1.6;
+    line-height: 1.3;
     min-height: 100vh;
     padding-top: var(--header-height);
 }
@@ -70,30 +65,27 @@ body::before {
 
 .sticky-header-content {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     height: 100%;
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 2rem;
-    gap: 1.5rem;
 }
 
 .header-row-1 {
     display: flex;
     align-items: center;
-    width: 100%;
-    gap: 1.5rem;
+    padding-top: 0.25rem;
 }
 
-/* Header Components */
-.header-logo {
-    flex-shrink: 0;
+.header-row-2 {
+    display: flex;
+    align-items: center;
+    padding-bottom: 0.15rem;
 }
 
 .logo-img {
     height: 50px;
-    width: auto;
-    border-radius: var(--radius);
 }
 
 .header-text {
@@ -160,15 +152,79 @@ body::before {
     cursor: not-allowed;
 }
 
-/* Specific styling for daf-select */
-/* #daf-select {
-    max-width: 80px;
-    min-width: 80px;
-    padding: 0.375rem 0.5rem;
-    padding-right: 2rem;
-    font-size: 0.85rem;
-    text-align: center;
-} */
+/* Header Audio Section */
+.header-audio-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    width: 100%;
+    padding: 0.2rem 0;
+    height: 60px;
+}
+
+.header-audio-section .player-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+.header-audio-section .control-btn {
+    height: 48px;
+    width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+.header-audio-section .control-btn:hover {
+    background: var(--surface-hover);
+    transform: translateY(-1px);
+}
+
+.header-audio-section .control-btn.primary {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+}
+
+.header-audio-section .control-btn.primary:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.header-audio-section .skip-label {
+    font-size: 0.5rem;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.header-audio-section .header-audio-player {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.header-audio-section .header-audio-player audio {
+    width: 300px;
+    height: 40px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    display: block;
+    margin: 0;
+    padding: 0;
+    transform: translateY(-10px); 
+}
+
 
 /* Main Container */
 .container {
@@ -280,7 +336,6 @@ body::before {
 
 .text-header {
     display: flex;
-    /* align-items: center; */
     justify-content: space-between;
     margin-bottom: 1rem;
 }
@@ -348,8 +403,6 @@ body::before {
     font-size: 1rem;
     margin: 0;
     color: var(--text-secondary);
-    /* font-style: normal; */
-    /* text-align: center; */
 }
 
 .text-content.loaded {
@@ -447,7 +500,7 @@ body::before {
 /* Mobile Responsive */
 @media (max-width: 640px) {
     :root {
-        --header-height: 160px;
+        --header-height: 180px;
     }
     
     .sticky-header-content {
@@ -464,6 +517,11 @@ body::before {
         text-align: left;
         width: 100%;
         flex-wrap: wrap;
+    }
+    
+    .header-row-2 {
+        width: 100%;
+        padding: 0.25rem 0;
     }
     
     .header-logo {
@@ -485,7 +543,6 @@ body::before {
     .dropdown-container {
         justify-content: right;
         gap: 1rem;
-        /* max-width: 300px; */
         margin: 0 auto;
     }
     
@@ -501,60 +558,59 @@ body::before {
     .logo-img {
         height: 40px;
     }
-     .container {
+    
+    .header-audio-section {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 0.25rem 0;
+    }
+    
+    .header-audio-section .player-controls {
+        gap: 0.75rem;
+    }
+    
+    .header-audio-section .control-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 0.9rem;
+    }
+    
+    .header-audio-section .control-btn.primary {
+        width: 45px;
+        height: 45px;
+        font-size: 1.1rem;
+    }
+    
+    .header-audio-section .skip-label {
+        font-size: 0.45rem;
+    }
+    
+    .header-audio-section .header-audio-player audio {
+        height: 45px;
+    }
+    
+    .container {
         padding: 1rem;
     }
 
     .main-content {
-        padding-top: 0; /* Remove gap between header and main content */
+        padding-top: 0;
     }
 
     .header-card {
         padding: 1.5rem;
-        margin: 0 -1rem; /* Extend to container edges */
-        border-radius: 0; /* Remove border radius for full width */
+        margin: 0 -1rem;
+        border-radius: 0;
     }
 
     .text-content {
         padding: 1rem;
         font-size: 0.9rem;
-        margin: 0 -1.5rem; /* Extend beyond header-card padding */
-        border-radius: 0; /* Remove border radius for full width */
+        margin: 0 -1.5rem;
+        border-radius: 0;
         border-left: none;
         border-right: none;
     }
-    
-    .controls-row {
-        gap: 1rem;
-    }
-    
-    .player-controls {
-        gap: 0.75rem;
-    }
-    
-    .control-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 1rem;
-    }
-    
-    .control-btn.primary {
-        width: 55px;
-        height: 55px;
-        font-size: 1.25rem;
-    }
-    
-    .skip-label {
-        font-size: 0.5rem;
-    }
-    
-    /* #daf-select {
-        max-width: 70px;
-        min-width: 70px;
-        padding: 0.375rem 0.25rem;
-        padding-right: 1.5rem;
-        font-size: 0.8rem;
-    } */
 }
 
 /* Animations */

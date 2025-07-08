@@ -71,82 +71,80 @@
                         </div>
                     </div>
                 </div>
-
+                
+                <div class="header-row-2">
+                    <div class="header-audio-section">
+                        <div class="player-controls">
+                            <button
+                                id="prev-btn"
+                                class="control-btn"
+                                title="Skip back 15 seconds">
+                                <i class="fas fa-undo"></i>
+                                <span class="skip-label">-15</span>
+                            </button>
+                            <button
+                                id="play-pause-btn"
+                                class="control-btn primary"
+                                title="Play/Pause">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button
+                                id="next-btn"
+                                class="control-btn"
+                                title="Skip forward 15 seconds">
+                                <i class="fas fa-redo"></i>
+                                <span class="skip-label">+15</span>
+                            </button>
+                        </div>
+                        <div class="header-audio-player">
+                            <audio
+                                id="audio-player"
+                                controls
+                                preload="none">
+                                Your browser does not support the audio
+                                element.
+                            </audio>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <div class="container">
             <main class="main-content">
-                <!-- Audio player section -->
-                <div class="header-audio-section">
-                    <div class="header-card">
-                        <div class="controls-section">
-                            <div class="controls-row">
-                                <div class="player-controls">
-                                    <button
-                                        id="prev-btn"
-                                        class="control-btn"
-                                        title="Skip back 15 seconds">
-                                        <i class="fas fa-undo"></i>
-                                        <span class="skip-label">-15</span>
+                <!-- Text section -->
+                <div class="header-card">
+                    <div class="text-section" id="text-section">
+                        <div class="text-header">
+                            <!-- <h3 class="text-title" id="text-title">
+                                Talmud Text
+                            </h3> -->
+                            <div class="text-controls">
+                                <div
+                                    class="text-loading"
+                                    id="text-loading"
+                                    style="display: none">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    Loading text...
+                                </div>
+                                <div class="language-toggle">
+                                      <button
+                                        id="english-btn"
+                                        class="lang-btn active"
+                                        data-lang="en">
+                                        English
                                     </button>
                                     <button
-                                        id="play-pause-btn"
-                                        class="control-btn primary"
-                                        title="Play/Pause">
-                                        <i class="fas fa-play"></i>
-                                    </button>
-                                    <button
-                                        id="next-btn"
-                                        class="control-btn"
-                                        title="Skip forward 15 seconds">
-                                        <i class="fas fa-redo"></i>
-                                        <span class="skip-label">+15</span>
+                                        id="hebrew-btn"
+                                        class="lang-btn"
+                                        data-lang="he">
+                                        עברית
                                     </button>
                                 </div>
-                            </div>
-                            <div class="header-audio-player">
-                                <audio
-                                    id="audio-player"
-                                    controls
-                                    preload="none">
-                                    Your browser does not support the audio
-                                    element.
-                                </audio>
                             </div>
                         </div>
-
-                        <div class="text-section" id="text-section">
-                            <div class="text-header">
-                                <!-- <h3 class="text-title" id="text-title">
-                                    Talmud Text
-                                </h3> -->
-                                <div class="text-controls">
-                                    <div
-                                        class="text-loading"
-                                        id="text-loading"
-                                        style="display: none">
-                                        <i class="fas fa-spinner fa-spin"></i>
-                                        Loading text...
-                                    </div>
-                                    <div class="language-toggle">
-                                          <button
-                                            id="english-btn"
-                                            class="lang-btn active"
-                                            data-lang="en">
-                                            English
-                                        </button>
-                                        <button
-                                            id="hebrew-btn"
-                                            class="lang-btn"
-                                            data-lang="he">
-                                            עברית
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-content" id="text-content">
-                                Select a Masechet and Daf to view the text
-                            </div>
+                        <div class="text-content" id="text-content">
+                            Select a Masechet and Daf to view the text
                         </div>
                     </div>
                 </div>
