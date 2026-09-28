@@ -1,11 +1,12 @@
-const CACHE_NAME = 'daf-yomi-player-v2';
+const CACHE_NAME = 'daf-yomi-player-v3';
 const urlsToCache = [
     '/',
     '/index.html',
     '/styles.css',
     '/script.js',
     '/data.json',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+    '/masechet.json',
+    'https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
 ];
 
@@ -39,15 +40,25 @@ self.addEventListener('fetch', function(event) {
     // Only cache GET requests
     if (event.request.method !== 'GET') return;
     
-    // Don't cache audio streams or external media in sw cache
+    // Don't cache audio streams or external media
     if (event.request.url.includes('.mp3') || event.request.url.includes('archive.org')) {
         return;
     }
 
+    // Network-first for app scripts, data, and styles so updates apply immediately
     event.respondWith(
-        caches.match(event.request)
+        fetch(event.request)
             .then(function(response) {
-                return response || fetch(event.request);
+                if (response && response.status === 200) {
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME).then(function(cache) {
+                        cache.put(event.request, responseToCache);
+                    });
+                }
+                return response;
+            })
+            .catch(function() {
+                return caches.match(event.request);
             })
     );
 });

@@ -2,6 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
+        <base href="/" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Daf Yomi by R. Darren Platzky - Mevaser Zion Tel Mond</title>
         <meta
@@ -32,7 +33,7 @@
             type="image/svg+xml"
             href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
 
-        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="/styles.css?v=20260928-v3" />
         <link
             rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
@@ -44,8 +45,10 @@
                     var decoded = l.search.slice(1).split('&').map(function(s) { 
                         return s.replace(/~and~/g, '&');
                     }).join('?');
+                    var base = l.pathname.endsWith('/') ? l.pathname.slice(0, -1) : l.pathname;
+                    if (base === '/') base = '';
                     window.history.replaceState(null, null,
-                        l.pathname.slice(0, -1) + decoded + l.hash
+                        base + (decoded.startsWith('/') ? decoded : '/' + decoded) + l.hash
                     );
                 }
             }(window.location));
@@ -57,7 +60,7 @@
             <div class="sticky-header-content">
                 <div class="header-row-1">
                     <div class="header-logo">
-                        <img src="mz_logo.png" alt="Logo" class="logo-img" />
+                        <img src="/mz_logo.png" alt="Logo" class="logo-img" />
                     </div>
                     <div class="header-text">
                         <div class="header-title-row">
@@ -187,6 +190,6 @@
             </div>
         </div>
 
-        <script src="script.js?v=20260928-1"></script>
+        <script src="/script.js?v=20260928-v3"></script>
     </body>
 </html>

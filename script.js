@@ -39,10 +39,10 @@ class DafYomiPlayer {
     
     async loadData() {
         try {
-            // Load both audio data and masechet data
+            // Load both audio data and masechet data using root paths
             const [audioResponse, masechetResponse] = await Promise.all([
-                fetch('data.json'),
-                fetch('masechet.json')
+                fetch('/data.json'),
+                fetch('/masechet.json')
             ]);
             
             this.audioData = await audioResponse.json();
@@ -620,7 +620,7 @@ class DafYomiPlayer {
         const tractateKey = this.getTractateKey(this.currentTractate);
         const lowerTractate = tractateKey.toLowerCase();
         
-        const localAudioPath = `content/${tractateKey}/${tractateKey}${this.currentDaf}.mp3`;
+        const localAudioPath = `/content/${tractateKey}/${tractateKey}${this.currentDaf}.mp3`;
         const archiveAudioPath = `https://archive.org/download/dafyomi-audio-${lowerTractate}/${tractateKey}${this.currentDaf}.mp3`;
         const gcsAudioPath = `https://storage.googleapis.com/dafyomi-audio/content/${tractateKey}/${tractateKey}${this.currentDaf}.mp3`;
 
@@ -1033,7 +1033,7 @@ class DafYomiPlayer {
         
         // Add Sefaria logo
         const logo = document.createElement('img');
-        logo.src = 'sefaria.png';
+        logo.src = '/sefaria.png';
         logo.alt = 'Sefaria';
         
         // Add version notes text
@@ -1070,12 +1070,13 @@ document.addEventListener('DOMContentLoaded', () => {
     new DafYomiPlayer();
 });
 
-// Service Worker registration for better caching (optional)
+// Service Worker registration for caching
 if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
+        navigator.serviceWorker.register('/sw.js')
             .then(registration => {
                 console.log('SW registered: ', registration);
+                registration.update();
             })
             .catch(registrationError => {
                 console.log('SW registration failed: ', registrationError);
