@@ -23,6 +23,12 @@ class DafYomiPlayer {
         this.nextBtn = document.getElementById('next-btn');
         this.loading = document.getElementById('loading');
         
+        // Header study badge elements
+        this.headerStudyBadge = document.getElementById('header-study-badge');
+        this.headerMasechetDisplay = document.getElementById('header-masechet-display');
+        this.headerDafDisplay = document.getElementById('header-daf-display');
+        this.headerEnglishDisplay = document.getElementById('header-english-display');
+
         // Text section elements
         this.textSection = document.getElementById('text-section');
         this.textLoading = document.getElementById('text-loading');
@@ -43,6 +49,7 @@ class DafYomiPlayer {
             this.masechetData = await masechetResponse.json();
             
             this.populateTractateDropdown();
+            this.initRoutingAndState();
         } catch (error) {
             console.error('Error loading data:', error);
             this.showError('Failed to load data. Please try again.');
@@ -55,6 +62,300 @@ class DafYomiPlayer {
         if (clean === 'Chullin') clean = 'Chulin';
         if (clean === 'RoshHashanah') clean = 'RoshHashana';
         return clean;
+    }
+
+    normalizeSlug(str) {
+        if (!str) return '';
+        const aliases = {
+            'chullin': 'chulin',
+            'roshhashanah': 'roshhashana',
+            'avodazarah': 'avodahzarah',
+            'avodazara': 'avodahzarah',
+            'beitza': 'beitzah',
+            'megila': 'megillah',
+            'nida': 'niddah',
+            'bechorot': 'bekhorot',
+            'arachin': 'arakhin',
+            'hagigah': 'chagigah',
+            'brachot': 'berakhot',
+            'berachot': 'berakhot',
+        };
+        const cleaned = decodeURIComponent(str).trim().toLowerCase().replace(/[\s\-_]/g, '');
+        return aliases[cleaned] || cleaned;
+    }
+
+    findTractateKey(input) {
+        if (!input) return null;
+        const normalized = this.normalizeSlug(input);
+
+        // Check in masechetData by title, heTitle, or normalized key
+        for (const m of this.masechetData) {
+            const key = this.getTractateKey(m.title);
+            if (
+                this.normalizeSlug(m.title) === normalized ||
+                this.normalizeSlug(m.heTitle) === normalized ||
+                this.normalizeSlug(key) === normalized
+            ) {
+                return key;
+            }
+        }
+
+        // Check directly in audioData keys
+        for (const key of Object.keys(this.audioData)) {
+            if (this.normalizeSlug(key) === normalized) {
+                return key;
+            }
+        }
+
+        return null;
+    }
+
+    getTractateSlug(tractateKey) {
+        if (!tractateKey) return '';
+        const slugMap = {
+            'Chulin': 'chulin',
+            'BavaKamma': 'bava-kamma',
+            'BavaMetzia': 'bava-metzia',
+            'BavaBatra': 'bava-batra',
+            'RoshHashana': 'rosh-hashana',
+            'MoedKatan': 'moed-katan',
+            'AvodahZarah': 'avodah-zarah',
+        };
+        if (slugMap[tractateKey]) return slugMap[tractateKey];
+        return tractateKey.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+    }
+
+    parseDafNumber(dafInput) {
+        if (!dafInput) return null;
+        const raw = decodeURIComponent(dafInput).trim();
+        if (/^\d+$/.test(raw)) {
+            return String(parseInt(raw, 10));
+        }
+        const gematriaValues = {
+            'א': 1, 'ב': 2, 'ג': 3, 'ד': 4, 'ה': 5, 'ו': 6, 'ז': 7, 'ח': 8, 'ט': 9,
+            'י': 10, 'כ': 20, 'ך': 20, 'ל': 30, 'מ': 40, 'ם': 40, 'נ': 50, 'ן': 50,
+            'ס': 60, 'ע': 70, 'פ': 80, 'ף': 80, 'צ': 90, 'ץ': 90,
+            'ק': 100, 'ר': 200, 'ש': 300, 'ת': 400
+        };
+        let total = 0;
+        for (const char of raw) {
+            if (gematriaValues[char]) {
+                total += gematriaValues[char];
+            } else {
+                return null;
+            }
+        }
+        return total > 0 ? String(total) : null;
+    }
+
+    saveLastPlayed() {
+        if (!this.currentTractate || !this.currentDaf) return;
+        try {
+            const data = {
+                tractate: this.currentTractate,
+                daf: this.currentDaf,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('dafyomi_last_played', JSON.stringify(data));
+        } catch (e) {
+            console.warn('Unable to save to localStorage:', e);
+        }
+    }
+
+    getLastPlayed() {
+        try {
+            const raw = localStorage.getItem('dafyomi_last_played');
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.tractate && parsed.daf) {
+                return parsed;
+            }
+        } catch (e) {
+            console.warn('Unable to read from localStorage:', e);
+        }
+        return null;
+    }
+
+    updateHeaderStudyDisplay() {
+        if (this.currentTractate && this.currentDaf) {
+            const hebrewTitle = this.getHebrewTitle(this.currentTractate);
+            const gematriaTitle = this.convertToGematria(this.currentDaf);
+            const masechet = this.masechetData.find(
+                m => m.title === this.currentTractate || this.getTractateKey(m.title) === this.currentTractate
+            );
+            const englishTitle = this.currentTractate === 'Chulin' 
+                ? 'Chulin' 
+                : (masechet ? masechet.title : this.currentTractate.replace(/([A-Z])/g, ' $1').trim());
+
+            if (this.headerMasechetDisplay) {
+                this.headerMasechetDisplay.textContent = `מסכת ${hebrewTitle}`;
+            }
+            if (this.headerDafDisplay) {
+                this.headerDafDisplay.textContent = `דף ${gematriaTitle}`;
+            }
+            if (this.headerEnglishDisplay) {
+                this.headerEnglishDisplay.textContent = `(${englishTitle} ${this.currentDaf})`;
+            }
+            if (this.headerStudyBadge) {
+                this.headerStudyBadge.style.display = 'inline-flex';
+            }
+        } else {
+            if (this.headerStudyBadge) {
+                this.headerStudyBadge.style.display = 'none';
+            }
+        }
+    }
+
+    selectTractate(tractate, explicitDaf = null, shouldPushHistory = true) {
+        const key = this.getTractateKey(tractate);
+        const tractateData = this.audioData[key] || this.audioData[tractate];
+        if (!tractateData) return;
+
+        const dafs = Array.isArray(tractateData) ? tractateData : tractateData.dafs || [];
+        if (dafs.length === 0) return;
+
+        this.currentTractate = key;
+        this.tractateSelect.value = key;
+        this.populateDafDropdown(key);
+
+        // If explicit daf is provided and exists in dafs, use it;
+        // Otherwise, automatically select page 2 (or first available daf)
+        let targetDaf = null;
+        if (explicitDaf && dafs.includes(String(explicitDaf))) {
+            targetDaf = String(explicitDaf);
+        } else if (dafs.includes('2')) {
+            targetDaf = '2';
+        } else {
+            targetDaf = dafs[0];
+        }
+
+        this.selectDaf(targetDaf, shouldPushHistory);
+    }
+
+    selectDaf(daf, shouldPushHistory = true) {
+        if (!this.currentTractate) return;
+
+        this.currentDaf = String(daf);
+        this.dafSelect.value = this.currentDaf;
+
+        if (this.isPlaying) {
+            this.audio.pause();
+            this.isPlaying = false;
+            this.updatePlayPauseButton();
+        }
+
+        this.loadAudio();
+        this.loadTalmudText();
+        this.updatePageTitle();
+        this.updateHeaderStudyDisplay();
+        this.saveLastPlayed();
+
+        if (shouldPushHistory) {
+            this.updateURL();
+        }
+    }
+
+    getRouteFromURL() {
+        let path = '';
+        if (window.location.hash) {
+            path = window.location.hash.replace(/^#\/?/, '');
+        } else {
+            const search = window.location.search;
+            if (search && search.startsWith('?/')) {
+                path = search.slice(2);
+            } else {
+                path = window.location.pathname;
+            }
+        }
+
+        path = path.replace(/^\/+|\/+$/g, '');
+        if (path.startsWith('index.html')) {
+            path = path.replace(/^index\.html\/?/, '');
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryMasechet = urlParams.get('masechet') || urlParams.get('tractate');
+        const queryDaf = urlParams.get('daf') || urlParams.get('page');
+
+        if (queryMasechet) {
+            const tractateKey = this.findTractateKey(queryMasechet);
+            const daf = this.parseDafNumber(queryDaf);
+            if (tractateKey) {
+                return { tractate: tractateKey, daf };
+            }
+        }
+
+        if (!path) {
+            return { tractate: null, daf: null };
+        }
+
+        const parts = path.split('/').filter(Boolean);
+        if (parts.length === 0) {
+            return { tractate: null, daf: null };
+        }
+
+        const masechetInput = parts[0];
+        const dafInput = parts[1] || null;
+
+        const tractateKey = this.findTractateKey(masechetInput);
+        const daf = dafInput ? this.parseDafNumber(dafInput) : null;
+
+        return { tractate: tractateKey, daf };
+    }
+
+    updateURL(customPath = null) {
+        if (customPath !== null) {
+            const targetUrl = customPath || '/';
+            if (window.location.pathname !== targetUrl) {
+                window.history.pushState(null, '', targetUrl);
+            }
+            return;
+        }
+
+        if (this.currentTractate && this.currentDaf) {
+            const slug = this.getTractateSlug(this.currentTractate);
+            const newPath = `/${slug}/${this.currentDaf}`;
+            if (window.location.pathname !== newPath) {
+                window.history.pushState(
+                    { tractate: this.currentTractate, daf: this.currentDaf },
+                    '',
+                    newPath
+                );
+            }
+        }
+    }
+
+    initRoutingAndState() {
+        const route = this.getRouteFromURL();
+        if (route.tractate) {
+            // Direct navigation requested via URL
+            this.selectTractate(route.tractate, route.daf, false);
+
+            // Canonicalize URL pathname if needed
+            const canonicalSlug = this.getTractateSlug(this.currentTractate);
+            const canonicalPath = `/${canonicalSlug}/${this.currentDaf}`;
+            if (window.location.pathname !== canonicalPath && !window.location.hash) {
+                window.history.replaceState(
+                    { tractate: this.currentTractate, daf: this.currentDaf },
+                    '',
+                    canonicalPath
+                );
+            }
+        } else {
+            // Clean URL: Load the latest daf that was played if available
+            const lastPlayed = this.getLastPlayed();
+            if (lastPlayed && lastPlayed.tractate) {
+                const key = this.getTractateKey(lastPlayed.tractate);
+                const tractateData = this.audioData[key] || this.audioData[lastPlayed.tractate];
+                if (tractateData) {
+                    const dafs = Array.isArray(tractateData) ? tractateData : tractateData.dafs || [];
+                    const validDaf = dafs.includes(String(lastPlayed.daf)) ? String(lastPlayed.daf) : null;
+                    if (validDaf) {
+                        this.selectTractate(key, validDaf, false);
+                    }
+                }
+            }
+        }
     }
 
     populateTractateDropdown() {
@@ -193,42 +494,23 @@ class DafYomiPlayer {
     bindEvents() {
         // Dropdown events
         this.tractateSelect.addEventListener('change', (e) => {
-            const tractate = e.target.value;
+            const tractate = (e && e.target) ? e.target.value : this.tractateSelect.value;
             if (tractate) {
-                this.populateDafDropdown(tractate);
-                this.currentTractate = tractate;
+                // Automatically selects page 2 (or first available daf)
+                this.selectTractate(tractate, null, true);
             } else {
-                this.dafSelect.innerHTML = '<option value="">דף</option>';
-                this.dafSelect.disabled = true;
-                // Stop playback and reset to initial state
-                if (this.isPlaying) {
-                    this.audio.pause();
-                    this.isPlaying = false;
-                    this.updatePlayPauseButton();
-                }
                 this.resetToInitialState();
+                this.updateURL('');
             }
-            this.currentDaf = '';
         });
         
         this.dafSelect.addEventListener('change', (e) => {
-            this.currentDaf = e.target.value;
-            if (this.currentDaf && this.currentTractate) {
-                // Stop current playback if playing
-                if (this.isPlaying) {
-                    this.audio.pause();
-                    this.isPlaying = false;
-                    this.updatePlayPauseButton();
-                }
-                // Automatically load audio when daf is selected
-                this.loadAudio();
-                // Load Talmud text when daf is selected
-                this.loadTalmudText();
-                // Update page title
-                this.updatePageTitle();
+            const daf = (e && e.target) ? e.target.value : this.dafSelect.value;
+            if (daf && this.currentTractate) {
+                this.selectDaf(daf, true);
             } else {
-                // Reset to initial state when no daf selected
                 this.resetToInitialState();
+                this.updateURL('');
             }
         });
         
@@ -272,6 +554,7 @@ class DafYomiPlayer {
         this.audio.addEventListener('play', () => {
             this.isPlaying = true;
             this.updatePlayPauseButton();
+            this.saveLastPlayed();
         });
         
         this.audio.addEventListener('pause', () => {
@@ -281,6 +564,18 @@ class DafYomiPlayer {
         
         this.audio.addEventListener('ended', () => {
             this.playNextDaf();
+        });
+
+        // Browser navigation (back/forward)
+        window.addEventListener('popstate', () => {
+            const route = this.getRouteFromURL();
+            if (route.tractate) {
+                if (route.tractate !== this.currentTractate || route.daf !== this.currentDaf) {
+                    this.selectTractate(route.tractate, route.daf, false);
+                }
+            } else {
+                this.resetToInitialState();
+            }
         });
         
         // Keyboard shortcuts
@@ -454,15 +749,19 @@ class DafYomiPlayer {
     playNextDaf() {
         if (!this.currentTractate || !this.currentDaf) return;
         
-        const tractateData = this.audioData[this.currentTractate];
+        const key = this.getTractateKey(this.currentTractate);
+        const tractateData = this.audioData[key] || this.audioData[this.currentTractate];
+        if (!tractateData) return;
+
         const dafs = Array.isArray(tractateData) ? tractateData : tractateData.dafs || [];
         const currentIndex = dafs.indexOf(this.currentDaf);
         
         if (currentIndex < dafs.length - 1) {
             const nextDaf = dafs[currentIndex + 1];
-            this.currentDaf = nextDaf;
-            this.dafSelect.value = nextDaf;
-            this.loadAudio();
+            this.selectDaf(nextDaf, true);
+            this.audio.play().catch(e => {
+                console.warn('Auto-playback prevented by browser policy:', e);
+            });
         }
     }
     
@@ -479,8 +778,16 @@ class DafYomiPlayer {
         if (this.textContent) this.textContent.innerHTML = '<p class="text-placeholder">Select a Masechet and Daf to view the text</p>';
         if (this.textLoading) this.textLoading.style.display = 'none';
         
-        // Reset page title
+        // Reset state, page title, and header study badge
+        this.currentTractate = '';
+        this.currentDaf = '';
+        if (this.tractateSelect) this.tractateSelect.value = '';
+        if (this.dafSelect) {
+            this.dafSelect.innerHTML = '<option value="">דף</option>';
+            this.dafSelect.disabled = true;
+        }
         this.updatePageTitle();
+        this.updateHeaderStudyDisplay();
         
         // Clear audio
         this.audio.src = '';
@@ -764,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Service Worker registration for better caching (optional)
-if ('serviceWorker' in navigator) {
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js')
             .then(registration => {
