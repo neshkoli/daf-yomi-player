@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daf-yomi-player-v1';
+const CACHE_NAME = 'daf-yomi-player-v2';
 const urlsToCache = [
     '/',
     '/index.html',
@@ -10,6 +10,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', function(event) {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(function(cache) {
@@ -18,13 +19,35 @@ self.addEventListener('install', function(event) {
     );
 });
 
+self.addEventListener('activate', function(event) {
+    event.waitUntil(
+        caches.keys().then(function(cacheNames) {
+            return Promise.all(
+                cacheNames.map(function(cacheName) {
+                    if (cacheName !== CACHE_NAME) {
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(function() {
+            return self.clients.claim();
+        })
+    );
+});
+
 self.addEventListener('fetch', function(event) {
+    // Only cache GET requests
+    if (event.request.method !== 'GET') return;
+    
+    // Don't cache audio streams or external media in sw cache
+    if (event.request.url.includes('.mp3') || event.request.url.includes('archive.org')) {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(function(response) {
-                // Return cached version or fetch from network
                 return response || fetch(event.request);
-            }
-        )
+            })
     );
 });

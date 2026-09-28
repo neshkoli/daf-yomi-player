@@ -49,14 +49,22 @@ class DafYomiPlayer {
         }
     }
     
+    getTractateKey(tractate) {
+        if (!tractate) return '';
+        let clean = tractate.replace(/\s+/g, '');
+        if (clean === 'Chullin') clean = 'Chulin';
+        if (clean === 'RoshHashanah') clean = 'RoshHashana';
+        return clean;
+    }
+
     populateTractateDropdown() {
         // Sort masechet data by order
         this.masechetData.sort((a, b) => a.order - b.order);
         
         // Filter to only show tractates that have available audio content
         const availableTractates = this.masechetData.filter(masechet => {
-            // Check if this tractate exists in audioData and has content
-            const tractateData = this.audioData[masechet.title];
+            const key = this.getTractateKey(masechet.title);
+            const tractateData = this.audioData[key] || this.audioData[masechet.title];
             if (!tractateData) return false;
             
             // Handle both old format (array) and new format (object with dafs array)
@@ -65,8 +73,9 @@ class DafYomiPlayer {
         });
         
         availableTractates.forEach(masechet => {
+            const tractateKey = this.getTractateKey(masechet.title);
             const option = document.createElement('option');
-            option.value = masechet.title;
+            option.value = tractateKey;
             option.textContent = masechet.heTitle; // Show only Hebrew text
             this.tractateSelect.appendChild(option);
         });
@@ -124,7 +133,8 @@ class DafYomiPlayer {
     }
 
     populateDafDropdown(tractate) {
-        const tractateData = this.audioData[tractate];
+        const key = this.getTractateKey(tractate);
+        const tractateData = this.audioData[key] || this.audioData[tractate];
         if (!tractateData) return;
         
         // Handle both old format (array) and new format (object with dafs array)
@@ -146,8 +156,9 @@ class DafYomiPlayer {
     }
     
     formatTractateName(tractate) {
+        const key = this.getTractateKey(tractate);
         // Find the Hebrew title for this tractate
-        const masechet = this.masechetData.find(m => m.title === tractate);
+        const masechet = this.masechetData.find(m => m.title === tractate || this.getTractateKey(m.title) === key);
         if (masechet) {
             return `${masechet.title} - ${masechet.heTitle}`;
         }
@@ -156,22 +167,27 @@ class DafYomiPlayer {
     }
     
     getHebrewTitle(tractate) {
-        const masechet = this.masechetData.find(m => m.title === tractate);
+        const key = this.getTractateKey(tractate);
+        const masechet = this.masechetData.find(m => m.title === tractate || this.getTractateKey(m.title) === key);
         return masechet ? masechet.heTitle : tractate;
     }
     
     formatTractateForAPI(tractate) {
+        const key = this.getTractateKey(tractate);
         // Convert tractate name to Sefaria API format
         // Handle multi-word tractates and spelling variations
         const tractateMap = {
             'BavaBatra': 'Bava_Batra',
             'BavaKamma': 'Bava_Kamma', 
             'BavaMetzia': 'Bava_Metzia',
-            'Kiddishin': 'Kiddushin',  // Handle spelling variation
-            // Add other mappings as needed
+            'RoshHashana': 'Rosh_Hashanah',
+            'MoedKatan': 'Moed_Katan',
+            'AvodahZarah': 'Avodah_Zarah',
+            'Chulin': 'Chullin',
+            'Kiddishin': 'Kiddushin',
         };
         
-        return tractateMap[tractate] || tractate;
+        return tractateMap[key] || tractateMap[tractate] || key;
     }
     
     bindEvents() {
@@ -302,46 +318,90 @@ class DafYomiPlayer {
     loadAudio() {
         if (!this.currentTractate || !this.currentDaf) return;
         
-        // First try local path
-        const localAudioPath = `content/${this.currentTractate}/${this.currentTractate}${this.currentDaf}.mp3`;
-        
-        // Disable controls while loading
+        // Disable controls and show loading
         this.disablePlayControls(true);
+        this.showLoading(true);
+
+        const tractateKey = this.getTractateKey(this.currentTractate);
+        const lowerTractate = tractateKey.toLowerCase();
         
-        // Try local path first
-        this.tryLoadAudio(localAudioPath, () => {
-            // If local fails, try GCP storage
-            const gcsAudioPath = `https://storage.googleapis.com/dafyomi-audio/content/${this.currentTractate}/${this.currentTractate}${this.currentDaf}.mp3`;
-            this.tryLoadAudio(gcsAudioPath, () => {
-                // If both fail, show error
-                this.handleAudioLoadError();
-            });
+        const localAudioPath = `content/${tractateKey}/${tractateKey}${this.currentDaf}.mp3`;
+        const archiveAudioPath = `https://archive.org/download/dafyomi-audio-${lowerTractate}/${tractateKey}${this.currentDaf}.mp3`;
+        const gcsAudioPath = `https://storage.googleapis.com/dafyomi-audio/content/${tractateKey}/${tractateKey}${this.currentDaf}.mp3`;
+
+        const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        
+        // In local development, check local files first
+        // In production (GitHub Pages / custom domain), check Archive.org first
+        const sources = isLocalHost
+            ? [localAudioPath, archiveAudioPath, gcsAudioPath]
+            : [archiveAudioPath, localAudioPath, gcsAudioPath];
+
+        this.tryLoadFromSources(sources, 0);
+    }
+
+    tryLoadFromSources(sources, index) {
+        if (index >= sources.length) {
+            this.handleAudioLoadError();
+            return;
+        }
+
+        const audioPath = sources[index];
+        this.tryLoadAudio(audioPath, () => {
+            this.tryLoadFromSources(sources, index + 1);
         });
     }
     
     tryLoadAudio(audioPath, onError) {
         // Create a temporary audio element to test if the file exists
         const testAudio = new Audio();
-        
-        testAudio.addEventListener('canplay', () => {
-            // File exists and can be played, use it in the main player
+        let settled = false;
+        let timer = null;
+
+        const cleanup = () => {
+            if (timer) clearTimeout(timer);
+            testAudio.removeEventListener('canplay', onReady);
+            testAudio.removeEventListener('loadedmetadata', onReady);
+            testAudio.removeEventListener('error', onFail);
+        };
+
+        const onReady = () => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            // File exists and metadata received, use it in the main player
             this.audio.src = audioPath;
             this.audio.load();
-        }, { once: true });
-        
-        testAudio.addEventListener('error', () => {
-            // File doesn't exist or can't be loaded, try fallback
+        };
+
+        const onFail = () => {
+            if (settled) return;
+            settled = true;
+            cleanup();
             onError();
-        }, { once: true });
-        
-        // Start loading the test audio
+        };
+
+        testAudio.addEventListener('canplay', onReady, { once: true });
+        testAudio.addEventListener('loadedmetadata', onReady, { once: true });
+        testAudio.addEventListener('error', onFail, { once: true });
+
+        // Safety timeout in case browser pauses unattached audio
+        timer = setTimeout(() => {
+            if (!settled) {
+                // If it's taking too long, attempt to set directly on this.audio if it's the primary source
+                onReady();
+            }
+        }, 5000);
+
+        testAudio.preload = 'metadata';
         testAudio.src = audioPath;
         testAudio.load();
     }
     
     handleAudioLoadError() {
-        // Check if we have GCS URLs in data.json as final fallback
-        const tractateData = this.audioData[this.currentTractate];
+        // Check if we have URLs in data.json as final fallback
+        const tractateKey = this.getTractateKey(this.currentTractate);
+        const tractateData = this.audioData[tractateKey] || this.audioData[this.currentTractate];
         let fallbackPath = null;
         
         if (tractateData && tractateData.urls && tractateData.urls[this.currentDaf]) {
@@ -358,6 +418,8 @@ class DafYomiPlayer {
             this.showLoading(false);
             this.disablePlayControls(true);
             
+            const tractateName = this.formatTractateName(this.currentTractate);
+            this.showError(`ההקלטה עבור ${tractateName} דף ${this.convertToGematria(this.currentDaf)} אינה זמינה כרגע`);
             console.error(`Audio file not found for ${this.currentTractate} ${this.currentDaf}`);
         }
     }
