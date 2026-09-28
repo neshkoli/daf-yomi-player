@@ -116,14 +116,15 @@ upload_masechet() {
     local max_attempts=20
     while [ "$attempt" -le "$max_attempts" ]; do
         echo "Upload attempt $attempt of $max_attempts for $masechet..."
-        if ia upload "$item_id" "${upload_files[@]}" \
+        if ia upload \
             -m "mediatype:audio" \
             -m "collection:opensource_audio" \
             -m "title:Daf Yomi - $masechet" \
             -m "creator:R. Darren Platzky" \
             -m "language:heb" \
             -m "description:Daf Yomi audio shiurim by R. Darren Platzky for Masechet $masechet" \
-            -c -n -R 5; then
+            -c -n -R 5 \
+            "$item_id" "${upload_files[@]}"; then
             echo "Successfully uploaded $masechet ($total_files files) to $item_id."
             break
         else
