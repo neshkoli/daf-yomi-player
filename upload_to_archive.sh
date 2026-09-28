@@ -45,9 +45,10 @@ wait_for_queue() {
     while true; do
         local queued
         # Exclude dafyomi-audio-berakhot tasks which are waiting on storage node ia600701 maintenance
-        queued=$(ia tasks -l 2>/dev/null | grep -v "dafyomi-audio-berakhot" | wc -l || echo 0)
-        queued=$(echo "$queued" | tr -d ' ')
-        if [ -n "$queued" ] && [ "$queued" -ge 20 ]; then
+        queued=$( (ia tasks -l 2>/dev/null || true) | (grep -v "dafyomi-audio-berakhot" || true) | wc -l )
+        queued=$(echo "$queued" | tr -dc '0-9')
+        queued=${queued:-0}
+        if [ "$queued" -ge 20 ]; then
             echo "Queue has $queued active tasks pending on Archive.org. Waiting 60s for cluster workers to drain..."
             sleep 60
         else
@@ -94,28 +95,21 @@ upload_masechet() {
     
     echo "Found $total_files MP3 files."
     
+    # Check if already fully uploaded to Archive.org
+    local existing_count
+    existing_count=$(curl -s "https://archive.org/metadata/${item_id}/files_count" | grep -o '[0-9]\+' | head -n 1 || true)
+    existing_count=${existing_count:-0}
+    if [ "$existing_count" -ge "$total_files" ]; then
+        echo "Masechet $masechet already has $existing_count files on Archive.org. Skipping."
+        echo ""
+        return 0
+    fi
+
     # Prepare upload list including cover.jpg for album art
     local upload_files=("${files[@]}")
     if [ -f "cover.jpg" ]; then
         upload_files+=("cover.jpg")
     fi
-
-    # Generate file-level metadata so Archive.org never uses "New Recording"
-    local meta_jsonl="/tmp/file_metadata_${lower_name}.jsonl"
-    rm -f "$meta_jsonl"
-    for f in "${files[@]}"; do
-        local fname
-        fname=$(basename "$f")
-        local daf_num
-        daf_num=$(echo "$fname" | grep -o -E '[0-9]+' || echo "")
-        local clean_title
-        if [ -n "$daf_num" ]; then
-            clean_title="${masechet} Daf ${daf_num}"
-        else
-            clean_title="${masechet}"
-        fi
-        echo "{\"name\":\"${fname}\",\"title\":\"${clean_title}\",\"creator\":\"R. Darren Platzky\",\"album\":\"Daf Yomi - ${masechet}\",\"track\":\"${daf_num}\"}" >> "$meta_jsonl"
-    done
 
     # Upload with ia cli in a resilient retry loop
     local attempt=1
@@ -123,7 +117,6 @@ upload_masechet() {
     while [ "$attempt" -le "$max_attempts" ]; do
         echo "Upload attempt $attempt of $max_attempts for $masechet..."
         if ia upload "$item_id" "${upload_files[@]}" \
-            --file-metadata "$meta_jsonl" \
             -m "mediatype:audio" \
             -m "collection:opensource_audio" \
             -m "title:Daf Yomi - $masechet" \
@@ -132,7 +125,6 @@ upload_masechet() {
             -m "description:Daf Yomi audio shiurim by R. Darren Platzky for Masechet $masechet" \
             -c -n -R 5; then
             echo "Successfully uploaded $masechet ($total_files files) to $item_id."
-            rm -f "$meta_jsonl"
             break
         else
             echo "Upload paused (Archive.org rate limit or network error). Waiting 90s before retry..."
