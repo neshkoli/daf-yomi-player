@@ -1,4 +1,4 @@
-const CACHE_NAME = 'daf-yomi-player-v3';
+const CACHE_NAME = 'daf-yomi-player-v4';
 const urlsToCache = [
     '/',
     '/index.html',

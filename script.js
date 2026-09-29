@@ -486,6 +486,9 @@ class DafYomiPlayer {
             'AvodahZarah': 'Avodah_Zarah',
             'Chulin': 'Chullin',
             'Kiddishin': 'Kiddushin',
+            'Shekalim': 'Jerusalem_Talmud_Shekalim',
+            'Middot': 'Mishnah_Middot',
+            'Kinnim': 'Mishnah_Kinnim'
         };
         
         return tractateMap[key] || tractateMap[tractate] || key;
@@ -555,6 +558,7 @@ class DafYomiPlayer {
             this.isPlaying = true;
             this.updatePlayPauseButton();
             this.saveLastPlayed();
+            this.updateMediaSession();
         });
         
         this.audio.addEventListener('pause', () => {
@@ -769,6 +773,44 @@ class DafYomiPlayer {
         const icon = this.playPauseBtn.querySelector('i');
         icon.className = this.isPlaying ? 'fas fa-pause' : 'fas fa-play';
     }
+
+    updateMediaSession() {
+        if (!('mediaSession' in navigator) || !this.currentTractate || !this.currentDaf) return;
+
+        const tractateName = this.formatTractateName(this.currentTractate);
+        const dafFormatted = this.currentLanguage === 'he' 
+            ? `דף ${this.convertToGematria(this.currentDaf)}` 
+            : `Daf ${this.currentDaf}`;
+
+        const artworkUrl = new URL('cover.jpg', window.location.href).href;
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: `${tractateName} - ${dafFormatted}`,
+            artist: 'R. Darren Platzky',
+            album: `Daf Yomi - ${this.currentTractate}`,
+            artwork: [
+                { src: artworkUrl, sizes: '656x653', type: 'image/jpeg' },
+                { src: artworkUrl, sizes: '300x300', type: 'image/jpeg' }
+            ]
+        });
+
+        try {
+            navigator.mediaSession.setActionHandler('play', () => this.togglePlayPause());
+            navigator.mediaSession.setActionHandler('pause', () => this.togglePlayPause());
+            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+                const skipTime = details.seekOffset || 15;
+                this.audio.currentTime = Math.max(0, this.audio.currentTime - skipTime);
+            });
+            navigator.mediaSession.setActionHandler('seekforward', (details) => {
+                const skipTime = details.seekOffset || 15;
+                this.audio.currentTime = Math.min(this.audio.duration || 0, this.audio.currentTime + skipTime);
+            });
+            navigator.mediaSession.setActionHandler('nexttrack', () => this.playNextDaf());
+            navigator.mediaSession.setActionHandler('previoustrack', () => this.skipBackward());
+        } catch (e) {
+            // Action handler might not be supported in some browsers
+        }
+    }
     
     setInitialState() {
         // Set initial disabled state
@@ -936,7 +978,7 @@ class DafYomiPlayer {
             // Find version based on current language
             let targetVersion;
             if (this.currentLanguage === 'he') {
-                targetVersion = data.versions.find(v => v.language === 'he' && v.isPrimary);
+                targetVersion = data.versions.find(v => v.language === 'he' && v.isPrimary) || data.versions.find(v => v.language === 'he');
             } else {
                 targetVersion = data.versions.find(v => v.language === 'en');
             }
